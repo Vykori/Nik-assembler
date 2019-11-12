@@ -110,7 +110,7 @@ for count, line in enumerate(assembly, 1):
 		elif words[2] == "input":
 			operation = operation + int("0000000000000111", 2)
 		else:
-			print("Erorr. \"{0}\" is an unknown argument. Read location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", \"Nowhere\", \"ALU\", or \"Input\".".format(words[1]))
+			print("Erorr. \"{0}\" is an unknown argument. Read location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", \"Nowhere\", \"ALU\", or \"Input\".".format(words[2]))
 
 		#write mode
 		if words[3] == "direct":
@@ -120,7 +120,7 @@ for count, line in enumerate(assembly, 1):
 		elif words[3] == "proxy":
 			operation = operation + int("0000001100000000", 2)
 		else:
-			print("Erorr. \"{0}\" is an unknown argument. Write mode must be \"direct\", \"memory\", or \"proxy\".".format(words[1]))
+			print("Erorr. \"{0}\" is an unknown argument. Write mode must be \"direct\", \"memory\", or \"proxy\".".format(words[3]))
 
 		#write location
 		if words[4] == "a":
@@ -136,7 +136,7 @@ for count, line in enumerate(assembly, 1):
 		elif words[4] == "nowhere":
 			operation = operation + int("0000000010100000", 2)
 		else:
-			print("Erorr. \"{0}\" is an unknown argument. Write location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", or \"Nowhere\".".format(words[1]))
+			print("Erorr. \"{0}\" is an unknown argument. Write location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", or \"Nowhere\".".format(words[4]))
 
 	elif words[0] == "mode":
 		operation = int("0100000000000000", 2)
@@ -165,31 +165,30 @@ for count, line in enumerate(assembly, 1):
 		operation = int("1100000000000000")
 
 		#write mode
-		print(words[3])
-		if words[3] == "direct":
+		if words[1] == "direct":
 			operation = operation + int("0000000000000000", 2)
-		elif words[3] == "memory":
+		elif words[1] == "memory":
 			operation = operation + int("0000001000000000", 2)
-		elif words[3] == "proxy":
+		elif words[1] == "proxy":
 			operation = operation + int("0000001100000000", 2)
 		else:
 			print("Erorr. \"{0}\" is an unknown argument. Write mode must be \"direct\", \"memory\", or \"proxy\".".format(words[1]))
 
 		#write location
-		if words[4] == "a":
+		if words[2] == "a":
 			operation = operation + int("0000000000000000", 2)
-		elif words[4] == "b":
+		elif words[2] == "b":
 			operation = operation + int("0000000000100000", 2)
-		elif words[4] == "counter":
+		elif words[2] == "counter":
 			operation = operation + int("0000000001000000", 2)
-		elif words[4] == "output":
+		elif words[2] == "output":
 			operation = operation + int("0000000001100000", 2)
-		elif words[4] == "operand":
+		elif words[2] == "operand":
 			operation = operation + int("0000000010000000", 2)
-		elif words[4] == "nowhere":
+		elif words[2] == "nowhere":
 			operation = operation + int("0000000010100000", 2)
 		else:
-			print("Erorr. \"{0}\" is an unknown argument. Write location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", or \"Nowhere\".".format(words[1]))
+			print("Erorr. \"{0}\" is an unknown argument. Write location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", or \"Nowhere\".".format(words[2]))
 	
 	elif words[0][0] == "0":
 		if len(words[0]) != 2:
