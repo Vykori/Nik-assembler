@@ -52,10 +52,10 @@ for count, line in enumerate(assembly, 1):
 
 	#go through all operation types
 	words[0] = words[0].lower()
-	if words[0] == "hault":
+	if words[0] == "halt":
 		operation = int("0000000000000000", 2)
 		if len(words) > 1:
-			print("Warning: \"hault\" takes no arguments. They will be ignored.".format(count))
+			print("Warning: \"halt\" takes no arguments. They will be ignored.".format(count))
 
 	elif words[0] == "reset":
 		operation = int("1111110000000000", 2)
