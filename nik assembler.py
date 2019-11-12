@@ -1,28 +1,22 @@
 import os
 import binascii
 
-assembly = open("testing.nik", "r") #get file as read-only
-binary = open("output.bin","w+b") #make new file for output
+assembly = open("testing.nik", "r") #get input file as read-only
+outputFile = open("output.bin","w+b") #make new output file as read-write, create-if-needed, binary
 
 emptylines = False
-
-def emptyLinesError():
-	if emptylines == False:
-		print("Warning: You have at least 1 empty line in this file. Please ensure you\'re not jumping to incorrect addresses.")
-	return
 
 #run through each line of input file
 valid = True
 for count, line in enumerate(assembly, 1):
-	line = line.replace('\n', '')
-	line = line.replace('\t', ' ')
+	line = line.replace('\n', '') #remove that pesky newline that exists at the end of each line (except the last line)
+	line = line.replace('\t', ' ') #easiest way to support tab and space indenting is convert them to the same thing
 
 	words = line.split(" ") #never gives an empty list
 
-	#clear any leading spaces, empty lines, comments, etc
+	#clear any leading spaces, comments, convert to lowercase, detect blank lines, etc.
 	if len(words) == 1:
 		if words[0] == "":
-			emptyLinesError()
 			emptylines = True
 			continue
 	lineisempty = False #temporary variable just for double-breaking
@@ -31,21 +25,22 @@ for count, line in enumerate(assembly, 1):
 			words = words.pop(0)
 			if len(words) == 0:
 				emptylines = True
-				emptyLinesError()
-				lineisempty = True
+				lineisempty = True #double break
 				break
 		else:
 			break
 	if lineisempty == True:
 		continue
 	if words[0][0] == ";":
-		emptyLinesError()
 		emptylines = True
 		continue
 	for x in range(len(words)):
 		if words[x][0] == ";":
 			words = words[:x]
 			break;
+		words[x] = words[x].lower()
+		if words[x][len(words[x]) - 1] == "," or words[x][len(words[x]) - 1] == ";":
+			words[x] = words[x][:len(words[x]) - 1]
 
 	#initialization
 	print ("Line {}: ".format(count), end = '')
@@ -58,48 +53,151 @@ for count, line in enumerate(assembly, 1):
 	#go through all operation types
 	words[0] = words[0].lower()
 	if words[0] == "hault":
-		operation = 0
+		operation = int("0000000000000000", 2)
 		if len(words) > 1:
 			print("Warning: \"hault\" takes no arguments. They will be ignored.".format(count))
 
 	elif words[0] == "reset":
-		operation = 64512
+		operation = int("1111110000000000", 2)
 		if len(words) > 1:
 			print("Warning: \"reset\" takes no arguments. They will be ignored.".format(count))
+
 	elif words[0] == "nothing":
-		operation = 7168
+		operation = int("0001110000000000", 2)
 		if len(words) > 1:
 			print("Warning: \"nothing\" takes no arguments. They will be ignored.".format(count))
-	elif words[0] == "copy":
-		unimplimented = True
-	elif words[0] == "copyzero":
-		unimplimented = True
-	elif words[0] == "copyoverflow":
-		unimplimented = True
+
+	elif words[0] == "copy" or words[0] == "copyzero" or words[0] == "copyoverflow":
+		if words[0] == "copy":
+			operation = int("1000000000000000", 2)
+		elif words[0] == "copyzero":
+			operation = int("1000010000000000", 2)
+		elif words[0] == "copyoverflow":
+			operation = int("1000100000000000", 2)
+
+		if len(words) > 5:
+			print("Warning: \"copy\" only takes 4 argument. Extras will be ignored.".format(count))
+		elif len(words) < 5:
+			print("Error: \"mode\" needs an argument specified. Stopping.")
+			valid = False
+			break
+
+		#copy mode
+		if words[1] == "direct":
+			operation = operation + int("0000000000000000", 2)
+		elif words[1] == "memory":
+			operation = operation + int("0000000000010000", 2)
+		elif words[1] == "proxy":
+			operation = operation + int("0000000000011000", 2)
+		else:
+			print("Erorr. \"{0}\" is an unknown argument. Read mode must be \"direct\", \"memory\", or \"proxy\".".format(words[1]))
+
+		#copy location
+		if words[2] == "a":
+			operation = operation + int("0000000000000000", 2)
+		elif words[2] == "b":
+			operation = operation + int("0000000000000001", 2)
+		elif words[2] == "counter":
+			operation = operation + int("0000000000000010", 2)
+		elif words[2] == "output":
+			operation = operation + int("0000000000000011", 2)
+		elif words[2] == "operand":
+			operation = operation + int("0000000000000100", 2)
+		elif words[2] == "nowhere":
+			operation = operation + int("0000000000000101", 2)
+		elif words[2] == "alu":
+			operation = operation + int("0000000000000110", 2)
+		elif words[2] == "input":
+			operation = operation + int("0000000000000111", 2)
+		else:
+			print("Erorr. \"{0}\" is an unknown argument. Read location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", \"Nowhere\", \"ALU\", or \"Input\".".format(words[1]))
+
+		#write mode
+		if words[3] == "direct":
+			operation = operation + int("0000000000000000", 2)
+		elif words[3] == "memory":
+			operation = operation + int("0000001000000000", 2)
+		elif words[3] == "proxy":
+			operation = operation + int("0000001100000000", 2)
+		else:
+			print("Erorr. \"{0}\" is an unknown argument. Write mode must be \"direct\", \"memory\", or \"proxy\".".format(words[1]))
+
+		#write location
+		if words[4] == "a":
+			operation = operation + int("0000000000000000", 2)
+		elif words[4] == "b":
+			operation = operation + int("0000000000100000", 2)
+		elif words[4] == "counter":
+			operation = operation + int("0000000001000000", 2)
+		elif words[4] == "output":
+			operation = operation + int("0000000001100000", 2)
+		elif words[4] == "operand":
+			operation = operation + int("0000000010000000", 2)
+		elif words[4] == "nowhere":
+			operation = operation + int("0000000010100000", 2)
+		else:
+			print("Erorr. \"{0}\" is an unknown argument. Write location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", or \"Nowhere\".".format(words[1]))
+
 	elif words[0] == "mode":
-		operation = 32768
+		operation = int("0100000000000000", 2)
+		if len(words) > 2:
+				print("Warning: \"mode\" only takes 1 argument. Extras will be ignored.".format(count))
+		elif len(words) < 2:
+			print("Error: \"mode\" needs an argument specified. Stopping.")
+			valid = False
+			break
 		if words[1] == "add":
-			unimplimented = True
+			pass
 		elif words[1] == "subtract":
-			unimplimented = True
+			operation = operation + int("0000010000000000", 2)
 		elif words[1] == "and":
-			unimplimented = True
+			operation = operation + int("0000100000000000", 2)
 		elif words[1] == "xor":
-			unimplimented = True
+			operation = operation + int("0000110000000000", 2)
 		else:
 			print("Error: \"mode\" needs a single argument specifying \"add\", \"subtract\", \"and\", or \"xor\". Stopping.")
 			valid = False
 			break
 		if len(words) > 2:
-			print("Warning: \"mode\" only takes 1 argument. The rest will be ignored.".format(count))
+			print("Warning: \"mode\" only takes 1 argument. Extras will be ignored.".format(count))
+
 	elif words[0] == "or":
-		unimplimented = True
+		operation = int("1100000000000000")
+
+		#write mode
+		print(words[3])
+		if words[3] == "direct":
+			operation = operation + int("0000000000000000", 2)
+		elif words[3] == "memory":
+			operation = operation + int("0000001000000000", 2)
+		elif words[3] == "proxy":
+			operation = operation + int("0000001100000000", 2)
+		else:
+			print("Erorr. \"{0}\" is an unknown argument. Write mode must be \"direct\", \"memory\", or \"proxy\".".format(words[1]))
+
+		#write location
+		if words[4] == "a":
+			operation = operation + int("0000000000000000", 2)
+		elif words[4] == "b":
+			operation = operation + int("0000000000100000", 2)
+		elif words[4] == "counter":
+			operation = operation + int("0000000001000000", 2)
+		elif words[4] == "output":
+			operation = operation + int("0000000001100000", 2)
+		elif words[4] == "operand":
+			operation = operation + int("0000000010000000", 2)
+		elif words[4] == "nowhere":
+			operation = operation + int("0000000010100000", 2)
+		else:
+			print("Erorr. \"{0}\" is an unknown argument. Write location must be \"A\", \"B\", \"Counter\", \"Output\", \"Operand\", or \"Nowhere\".".format(words[1]))
+	
 	elif words[0][0] == "0":
 		if len(words[0]) != 2:
 			print(words[0], "is an unknown operation. stopping.")
 			valid = False
 			break
-		elif words[0][1] == "d":
+
+		elif words[0][1] == "d": #d stands for decimal in this case
 			if len(words) > 2:
 				print("Warning: \"0d\" only takes 1 argument. The others will be ignored.".format(count))
 			elif len(words) < 2:
@@ -107,7 +205,8 @@ for count, line in enumerate(assembly, 1):
 				valid = False
 				break
 			operation = int(words[1])
-		elif words[0][1] == "x":
+
+		elif words[0][1] == "x": #hexadecimal
 			if len(words) > 2:
 				print("Warning: \"0x\" only takes 1 argument. The others will be ignored.".format(count))
 			elif len(words) < 2:
@@ -116,7 +215,8 @@ for count, line in enumerate(assembly, 1):
 				break
 			operation = int("{0:>04}".format(words[1]), 16)
 			# https://docs.python.org/3/library/functions.html#int
-		elif words[0][1] == "b":
+
+		elif words[0][1] == "b": #binary
 			if len(words) > 2:
 				print("Warning: \"0b\" only takes 1 argument. The others will be ignored.".format(count))
 			elif len(words) < 2:
@@ -129,30 +229,33 @@ for count, line in enumerate(assembly, 1):
 			print(words[0], "is an unknown operation. stopping.")
 			valid = False
 			break
+	
 	else:
 		print("\"{0}\" is an unknown operation. stopping.".format(words[0]))
 		valid = False
 		break
 
 	if unimplimented == True:
-		print("Error: \"{1}\" is an unimplimented operation for now. stopping.".format(count, words[0]))
+		print("Error: \"{1}\" is an unimplimented operation for now. Stopping.".format(count, words[0]))
 		valid = False
 		break
 	else:
 		opcode = operation.to_bytes(2, byteorder='big', signed=False)
 		# converting opcode int into bytearray that I will later write to output file
 
-		testing = "{:02X}{:02X}".format(opcode[0],opcode[1])
+		hexopcode = "{:02X}{:02X}".format(opcode[0],opcode[1])
 
 		binarystring = '{:016b}'.format(operation)
 		# '016' means 16 chars wide and fill leading space with zeros, b means binary
 		# https://docs.python.org/3/library/string.html#format-specification-mini-language
 
-		print(binarystring, "or in hex:", testing)
+		print(binarystring, "or hex", hexopcode)
 		
-		binary.write(opcode)
+		outputFile.write(opcode)
 
 
 if valid == False:
-	binary.close()
+	outputFile.close()
 	os.remove("output.bin")
+elif emptylines == True:
+	print("Warning: You have at least 1 empty line in this file. Please ensure you\'re not jumping to incorrect addresses.")
