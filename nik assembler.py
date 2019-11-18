@@ -4,6 +4,7 @@ import binascii
 assembly = open("testing.nik", "r") #get input file as read-only
 outputFile = open("output.bin","w+b") #make new output file as read-write, create-if-needed, binary
 
+#at the end, if this variable is true, print a warning to console that there are empty lines in the input file
 emptylines = False
 
 #run through each line of input file
@@ -42,16 +43,15 @@ for count, line in enumerate(assembly, 1):
 		if words[x][len(words[x]) - 1] == "," or words[x][len(words[x]) - 1] == ";":
 			words[x] = words[x][:len(words[x]) - 1]
 
-	#initialization
+	#print the input code that's currently being interpreted
 	print ("Line {}: ".format(count), end = '')
 	for word in words:
 		print(word, end = ' ')
 	print()
-	operation = 0
-	unimplimented = False
+	
 
 	#go through all operation types
-	words[0] = words[0].lower()
+	operation = 0 #this variable will be the output data for this line of assembly. it will be converted to binary data at the end
 	if words[0] == "halt":
 		operation = int("0000000000000000", 2)
 		if len(words) > 1:
@@ -234,27 +234,20 @@ for count, line in enumerate(assembly, 1):
 		valid = False
 		break
 
-	if unimplimented == True:
-		print("Error: \"{1}\" is an unimplimented operation for now. Stopping.".format(count, words[0]))
-		valid = False
-		break
-	else:
-		opcode = operation.to_bytes(2, byteorder='big', signed=False)
-		# converting opcode int into bytearray that I will later write to output file
+	# converting opcode int into bytearray that I will later write to output file
+	opcode = operation.to_bytes(2, byteorder='big', signed=False)
 
-		hexopcode = "{:02X}{:02X}".format(opcode[0],opcode[1])
+	hexopcode = '{:04X}'.format(operation)
 
-		binarystring = '{:016b}'.format(operation)
-		# '016' means 16 chars wide and fill leading space with zeros, b means binary
-		# https://docs.python.org/3/library/string.html#format-specification-mini-language
+	binaryopcode = '{:016b}'.format(operation)
+	# https://docs.python.org/3/library/string.html#format-specification-mini-language
 
-		print(binarystring, "or hex", hexopcode)
-		
-		outputFile.write(opcode)
-
+	print(binaryopcode, "or hex", hexopcode)
+	
+	outputFile.write(opcode)
 
 if valid == False:
 	outputFile.close()
 	os.remove("output.bin")
 elif emptylines == True:
-	print("Warning: You have at least 1 empty line in this file. Please ensure you\'re not jumping to incorrect addresses.")
+	print("Warning: You have at least 1 empty line in this file. Please ensure you're not jumping to incorrect addresses.")
